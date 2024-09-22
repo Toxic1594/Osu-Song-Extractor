@@ -18,7 +18,6 @@ namespace osu_song_extractor
         private Point dragCursorPoint;
         private Point dragFormPoint;
 
-
         private void f1_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -28,38 +27,40 @@ namespace osu_song_extractor
                 dragFormPoint = this.Location;
             }
         }
+
         private void f1_MouseMove(object sender, MouseEventArgs e)
         {
             if (dragging)
             {
-                // Unterschied zur Cursorposition berechnen
                 int deltaX = Cursor.Position.X - dragCursorPoint.X;
                 int deltaY = Cursor.Position.Y - dragCursorPoint.Y;
 
-                // Neue Position berechnen
                 this.Location = new Point(dragFormPoint.X + deltaX, dragFormPoint.Y + deltaY);
             }
         }
+
         private void f1_MouseUp(object sender, MouseEventArgs e)
         {
             dragging = false;
         }
         #endregion
+
         int counter;
         string outputfolder;
         string Osufolder;
         string[] folderlist;
-        List<string> forbidden = new List<string>() {"easy1.mp3","easy2.mp3","easy3.mp","easy4.mp3", "easy5.mp3", "sectionfail.mp3", "sectionpass.mp3" };
+        List<string> forbidden = new List<string>()
+        {
+            "easy1.mp3", "easy2.mp3", "easy3.mp3", "easy4.mp3", "easy5.mp3",
+            "sectionfail.mp3", "sectionpass.mp3"
+        };
+
         public f1()
         {
             InitializeComponent();
             if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\osu!"))
             {
                 Osufolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\osu!";
-            }
-            else
-            {
-
             }
         }
 
@@ -68,9 +69,45 @@ namespace osu_song_extractor
             System.Diagnostics.Process.Start("https://github.com/Toxic1594");
         }
 
+
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir); // Create the destination directory if it doesn't exist
+
+            // Copy files
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                if (file.Contains(".mp3") && (!forbidden.Any(word => destFile.Contains(word))))
+                {
+                    if (!File.Exists(destFile)) 
+                    {
+                        File.Copy(file, destFile); // Overwrite if the file exists
+                    }
+                    else
+                    {
+                        File.AppendAllText("log.txt", "Duplicated File detected, skipping: " + destFile);
+                    }
+
+                    
+                }
+
+            }
+
+            // Copy subdirectories
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                if (destSubDir.Contains(".mp3") && (!forbidden.Any(word => destSubDir.Contains(word))))
+                {
+                    CopyDirectory(subDir, destSubDir); // Recursive call
+                }
+
+            }
+        }
+
         private void btnSelectFolder_Click(object sender, EventArgs e)
         {
-
             using (FolderBrowserDialog Folddiag = new FolderBrowserDialog())
             {
                 Folddiag.SelectedPath = Osufolder;
@@ -105,14 +142,13 @@ namespace osu_song_extractor
                             }
                         }
                         btnSelectFolder.Text = "Extract";
-                        string Folderpath;
-                        Folderpath = Folddiag.SelectedPath+"\\Songs";
+                        string Folderpath = Folddiag.SelectedPath + "\\Songs";
                         folderlist = Directory.GetDirectories(Folderpath);
                         foreach (var x in folderlist)
                         {
                             string[] files = Directory.GetFiles(x, "*.mp3");
-                            
-                            foreach(var y in files)
+
+                            foreach (var y in files)
                             {
                                 if (forbidden.Any(word => y.Contains(word)))
                                 {
@@ -123,36 +159,39 @@ namespace osu_song_extractor
                                     counter++;
                                     string[] parts = y.Split('\\');
 
-                                    if (parts.Length >= 2) // Überprüfen, ob genug Teile vorhanden sind
+                                    if (parts.Length >= 2) // Check if enough parts are present
                                     {
-
                                         string filename = parts[parts.Length - 1];
                                         string newfolder = parts[parts.Length - 2];
+
                                         if (cbexfolder.Checked)
                                         {
-                                            if (!Directory.Exists(outputfolder+"\\"+ newfolder))
-                                            {
-                                                Directory.CreateDirectory(outputfolder + "\\" + newfolder);
-                                            }
-                                            
-                                            File.Copy(y, outputfolder + "\\" + newfolder);
-                                        }
-                                        if (cbexfile.Checked)
-                                        {
-                                            File.Copy(y, outputfolder + "\\" + newfolder + ".mp3");
+                                            // Copy the entire folder
+                                            string sourceFolder = Path.GetDirectoryName(y);
+                                            string destinationFolder = Path.Combine(outputfolder, newfolder);
+                                            CopyDirectory(sourceFolder, destinationFolder);
                                         }
 
+                                        if (cbexfile.Checked)
+                                        {
+                                            if (!File.Exists(Path.Combine(outputfolder, newfolder + ".mp3")))
+                                            {
+                                                File.Copy(y, Path.Combine(outputfolder, newfolder + ".mp3"));
+                                            }
+                                            else
+                                            {
+                                                File.AppendAllText("log.txt", "Duplicated File detected, skipping: " + Path.Combine(outputfolder, newfolder + ".mp3") + "\n");
+                                            }
+                                        }
                                     }
                                 }
                             }
-
-
                         }
-                        MessageBox.Show(counter.ToString()+" Files extracted");
+                        MessageBox.Show(counter.ToString() + " Files extracted");
                     }
                     else
                     {
-                        MessageBox.Show("You didnt selected Osu");
+                        MessageBox.Show("You didn't select Osu");
                         return;
                     }
                 }

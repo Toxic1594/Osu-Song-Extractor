@@ -101,7 +101,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.ClientSize = new System.Drawing.Size(240, 206);
+            this.ClientSize = new System.Drawing.Size(240, 114);
             this.Controls.Add(this.cbexfile);
             this.Controls.Add(this.cbexfolder);
             this.Controls.Add(this.label1);
